@@ -11,6 +11,7 @@ SPECIALTIES:
 *specialty_extraammo: Mule Kick
 *specialty_fastreload: Speed Cola
 *specialty_fireproof: ZMP
+*specialty_gpsjammer: shocknade
 *specialty_longersprint: Staminup
 *specialty_quickrevive: Quick Revive with solo qr
 *specialty_rof: Double tap
@@ -21,7 +22,6 @@ specialty_bulletdamage: Stopping Power
 specialty_bulletpenetration: Deep Impact
 specialty_explosivedamage: Fireworks - like sonic boom in COD4
 specialty_gas_mask: Reduces the effects of gas grenade attacks
-specialty_gpsjammer: Conceal yourself from radar
 specialty_grenadepulldeath: Martyrdom
 specialty_holdbreath: Iron lungs
 specialty_leadfoot: Increase tank's drive speed
@@ -45,6 +45,13 @@ init()
 {
 	//MODDER ADJUSTMENTS======================================================================
 
+	//perk limit
+	level.mcperklimit = 5;//undefined if no limit
+
+	//perk menu hud
+	level.usemenuforhud = 1;//undefined or 0 for using hud instead of menu
+	level.usemenuforhint = 0;//undefiend or 0 for using hud instead of menu
+
 	//Sell Back perks
 	level.perksellback = true;//make false to not sell back perks and true to do so
 	level.sellbackweapon = "syrette";//weapon to give during sell back progress bar
@@ -54,9 +61,9 @@ init()
 
 	//electric cherry
 	level.eleccherryfx = level._effect["elec_torso"];//can change to other fx that has short life span, like 2 secs
-	level.eleccherryradius = 162;//radius for electric cherry
+	level.eleccherryradius = 112;//extra radius for electric cherry based on percentage of clip
 	level.eleccherryface = 1; //0 for no electric in face, 1 for electric in face
-	level.eleccherrydamage = 300;
+	level.eleccherrydamage = 1000;
 
 	//phd
 	level.phdheight = 0;//0= from the ground, increase by 1 to make higher... and so on
@@ -68,8 +75,18 @@ init()
 
 	//zmp
 	level.zmp_recharge = 10;//seconds till zmp works again
-	level.zmpradius = 100;
+	level.zmpradius = 80;
 	level.zmpfx = level._effect["elec_torso"];//can change to other fx that has short life span, like 2 secs
+
+	//shock nade
+	level.shocknadetime = 5;
+	level._effect["shocknade"]				          = loadfx("custom/shocknade");
+	level.shocknadefx = level._effect["shocknade"];
+	level.shocknadedamage = 2;//damage per second
+
+	//quick revive
+	level.revivelimit = 3;//make undefined for no limit
+	level.qrvanishfx = level._effect["poltergeist"];
 
 	//One weapon file for bottles
 	level.UseOneBottle = 1;//0 for other weapon files, 1 for only one
@@ -93,21 +110,28 @@ init()
 	//AddThisPerk(reward function,specialty,shader,hintstring,bottle,sound,vox)
 	//::None is used when no extra function is needed
 	//This function is thread on each player
-	AddThisPerk(::None,"specialty_quickrevive", "specialty_quickrevive_zombies","Press & hold &&1 to buy Quick Revive [Cost: 1500]","zombie_perk_bottle_revive", "mx_revive_sting","vox_perk_revive_0");
+	AddThisPerk(::ZMP,"specialty_fireproof", "vending_zmp_shader","Press & hold &&1 to buy ZMP [Cost: 3000]","zombie_perk_bottle_revive");
+	//zmp uses bear perk bottle and all others without one use it too
+
 	AddThisPerk(::None,"specialty_rof", "specialty_doubletap_zombies","Press & hold &&1 to buy Double Tap Root Beer [Cost: 2000]","zombie_perk_bottle_doubletap", "mx_doubletap_sting","vox_perk_doubletap_0");
 	AddThisPerk(::Jugg,"specialty_armorvest", "specialty_juggernaut_zombies","Press & hold &&1 to buy Jugger-Nog [Cost: 2500]","zombie_perk_bottle_jugg", "mx_jugger_sting","vox_perk_jugga_0");
 	AddThisPerk(::None,"specialty_fastreload", "specialty_fastreload_zombies","Press & hold &&1 to buy Speed Cola [Cost: 3000]","zombie_perk_bottle_sleight", "mx_speed_sting","vox_perk_speed_0");
 	
 	//bo perks
-	AddThisPerk(::PHD,"specialty_detectexplosive","specialty_divetonuke_zombies","Press & hold &&1 to buy PHD-Flopper [Cost: 1500]","zombie_perk_bottle_revive");
-	AddThisPerk(::None,"specialty_longersprint","specialty_marathon_zombies","Press & hold &&1 to buy Stamin-up [Cost: 2000]","zombie_perk_bottle_revive");
-	AddThisPerk(::None,"specialty_extraammo","specialty_mulekick_zombies","Press & hold &&1 to buy Mule Kick [Cost: 3000]","zombie_perk_bottle_revive");
-	AddThisPerk(::DeadShot,"specialty_bulletaccuracy","specialty_bulletaccuracy","Press & hold &&1 to buy DeadShot Daquiri [Cost: 1500]","zombie_perk_bottle_revive");
+	AddThisPerk(::PHD,"specialty_detectexplosive","specialty_divetonuke_zombies","Press & hold &&1 to buy PHD-Flopper [Cost: 1500]","zombie_perk_bottle_revive","mx_phd_sting","vox_perk_phdflopper_d_0");
+	AddThisPerk(::None,"specialty_longersprint","specialty_marathon_zombies","Press & hold &&1 to buy Stamin-up [Cost: 2000]","zombie_perk_bottle_revive","mx_staminup_sting","vox_perk_stamine_d_0");
+	AddThisPerk(::None,"specialty_extraammo","specialty_mulekick_zombies","Press & hold &&1 to buy Mule Kick [Cost: 3000]","zombie_perk_bottle_revive","mx_mule_sting","vox_perk_mule_d_0");
+	AddThisPerk(::DeadShot,"specialty_bulletaccuracy","specialty_bulletaccuracy","Press & hold &&1 to buy DeadShot Daquiri [Cost: 1500]","zombie_perk_bottle_revive","mx_deadshot_sting","vox_perk_deadshot_d_0");
 	
-	AddThisPerk(::ElecCherry,"specialty_shades", "vending_electric_cherry_shader","Press & hold &&1 to buy Electric Cherry [Cost: 2000]","zombie_perk_bottle_revive");
-
+	AddThisPerk(::ElecCherry,"specialty_shades", "vending_electric_cherry_shader","Press & hold &&1 to buy Electric Cherry [Cost: 2000]","zombie_perk_bottle_revive","mx_electric_cherry_sting");
+	
+	AddThisPerk(::None,"specialty_quickrevive", "specialty_quickrevive_zombies","Press & hold &&1 to buy Quick Revive [Cost: 1500]","zombie_perk_bottle_revive", "mx_revive_sting","vox_perk_revive_0");
+	
+	//custom perks
 	AddThisPerk(::DoubleMag,"specialty_twoprimaries", "vending_doublemag_shader","Press & hold &&1 to buy Split-Mag [Cost: 2000]","zombie_perk_bottle_revive");
-	AddThisPerk(::ZMP,"specialty_fireproof", "vending_zmp_shader","Press & hold &&1 to buy ZMP [Cost: 3000]","zombie_perk_bottle_revive");
+	AddThisPerk(::None,"specialty_gpsjammer", "vending_shocknade_shader","Press & hold &&1 to buy Shock-Nade [Cost: 2000]","zombie_perk_bottle_revive");
+
+	thread PerkRewards(::setPerkDvars);
 
 	//add bottles to use
 	preCacheItem( "zombie_perk_bottle" );
@@ -123,6 +147,7 @@ init()
 	level._effect["jugg_light"] = loadfx("mc_perks/fx_zombie_cola_jugg_on");
 	level._effect["revive_light"] = loadfx("mc_perks/fx_zombie_cola_revive_on");
 	level._effect["packapunch_fx"] = loadfx("mc_perks/fx_zombie_packapunch");
+
 
 	if( !isDefined( level.packapunch_timeout ) )
 	{
@@ -148,7 +173,7 @@ init()
 	level thread turn_PackAPunch_on();	
 	
 	// thread electric_on();
-	level thread machine_watcher();
+	// level thread machine_watcher();
 
 	//PERK RANDOMIZER
 	if(isDefined(level.randomize_perk_rounds)) thread PerkSetup();
@@ -156,8 +181,13 @@ init()
 }
 
 SetBottle(perk){
-	if(!isDefined(level.Bottles)) level.Bottles=[];
-	level.Bottles[level.Bottles.size] = perk;
+	flag_wait("all_players_connected");
+	wait(1);
+	if(!isDefined(level.OneBottle)) level.OneBottle=[];
+	wait(.1);
+	wait(.1);
+	level.OneBottle[level.OneBottle.size] = perk;
+	
 }
 None(){
 	//Reward handled elsewhere
@@ -203,10 +233,14 @@ ZMP(){
 	if(!isDefined(self.zmp)) self.zmp = 0;
 	while(1){
 		self waittill("damage", amount, attacker);
+		if(attacker==self) continue;
 		if(!self HasPerk("specialty_fireproof")) continue;
 		if(self.zmp==0){
 			zmp = 1;
-			self.perk_hud[ "specialty_fireproof" ].alpha = .3;
+			if(!IsDefined( level.usemenuforhud ) || !level.usemenuforhud){
+				if(!isDefined(self.perk_hud[ "specialty_fireproof" ])) continue;
+				self.perk_hud[ "specialty_fireproof" ].alpha = .3;
+			}
 			self enableInvulnerability();
 			self playlocalsound("zombie_arc");
 			PlayFXOnTag(level.zmpfx, self, "J_SpineLower");
@@ -218,9 +252,39 @@ ZMP(){
 				}
 			}
 			self disableInvulnerability();
-			wait(level.zmp_recharge);
+			if(IsDefined( level.usemenuforhud ) && level.usemenuforhud){
+				for(j=0;j<14;j++){
+					for(i=0;i<self.perk_hud.size;i++){
+						if(self.perk_hud[i] == level.specialties["specialty_fireproof"]["shader"]) self SetClientDvar("mc_perk_" + i, "");
+					}
+					wait(level.zmp_recharge/40);
+					for(i=0;i<self.perk_hud.size;i++){
+						if(self.perk_hud[i] == level.specialties["specialty_fireproof"]["shader"]) self SetClientDvar("mc_perk_" + i, self.perk_hud[i]);
+					}
+					wait(level.zmp_recharge/40);
+				}
+				for(j=0;j<6;j++){
+					for(i=0;i<self.perk_hud.size;i++){
+						if(self.perk_hud[i] == level.specialties["specialty_fireproof"]["shader"]) self SetClientDvar("mc_perk_" + i, "");
+					}
+					wait(level.zmp_recharge/80);
+					for(i=0;i<self.perk_hud.size;i++){
+						if(self.perk_hud[i] == level.specialties["specialty_fireproof"]["shader"]) self SetClientDvar("mc_perk_" + i, self.perk_hud[i]);
+					}
+					wait(level.zmp_recharge/80);
+				}
+			}else{
+				wait(level.zmp_recharge-3);
+				for(i=1;i<6;i++){
+					if(isDefined(self.perk_hud[ "specialty_fireproof" ]))  self.perk_hud[ "specialty_fireproof" ].alpha = .5+(i*.1);
+					wait(.25/i);
+					if(isDefined(self.perk_hud[ "specialty_fireproof" ]))  self.perk_hud[ "specialty_fireproof" ].alpha = .3;
+					wait(.25/i);
+				}
+				self.perk_hud[ "specialty_fireproof" ].alpha = 1;
+			}
 			zmp = 0;
-			self.perk_hud[ "specialty_fireproof" ].alpha = 1;
+			
 		}
 	}
 }
@@ -234,7 +298,7 @@ Jugg(){
 	}
 }
 AddThisPerk(function,specialty,shader,string,bottle,sound,vox){
-	SetBottle(specialty);
+	if(isDefined(level.UseOneBottle) && level.UseOneBottle) thread SetBottle(specialty);
 	thread PerkRewards(function);
 	if(!isDefined(level.specialties)) level.specialties = [];
 	DoubleCheck("sound",specialty,sound);
@@ -258,28 +322,34 @@ ElecCherry(){
 		self waittill_any("reload_start", "fake_death", "death", "player_downed");
 		if(self HasPerk("specialty_shades")){
 			if(level.eleccherryface) self setElectrified(0.03);
-			self playlocalsound("zombie_arc");
+			self playLocalSound("cherry_reload_charge");//"zombie_arc"//use this if don't have cherry sound
 			PlayFXOnTag(level.eleccherryfx, self, "J_SpineLower");
 			zombies = GetAiSpeciesArray( "axis", "all" );
 			gun = self getCurrentWeapon();
 			if(WeaponType(gun)=="grenade") gun = self GetWeaponsListPrimaries()[0];
-			subtract = self GetFractionMaxAmmo(gun);
-			// iPrintLnBold(level.eleccherryradius," ",level.eleccherryradius-(50*(subtract)));
-			// self enableInvulnerability();
-			// radiusdamage(self.origin, level.eleccherryradius-(60*(subtract)), level.eleccherrydamage,level.eleccherrydamage/2, self);
-			// self disableInvulnerability();
 			for(i=0;i<zombies.size;i++){
-				if(distance(self.origin,zombies[i].origin)<(level.eleccherryradius-(60*(subtract)))){//less ammo, more radius by 60
+				if(distance(self.origin,zombies[i].origin)<50+(level.eleccherryradius-(level.eleccherryradius * (self GetWeaponAmmoClip(gun)/WeaponClipSize( gun ))))){
 					PlayFxOnTag( level.eleccherryfx, zombies[i], "J_SpineLower" );
-
 					zombies[i] DoDamage( level.eleccherrydamage, zombies[i].origin );
+					if(IsAlive(zombies[i])) zombies[i] thread StunZombies();
 				}
 			}
 			wait(2);//delay before it can be done again.
 		}
 	}
 }
+StunZombies(){
+	self endon("death");
+	if(IsAlive(self)) {
+		if(!self.has_legs) self animscripted("stun", self.origin, self.angles, level._zombie_melee_crawl["zombie"][0]);
+		else self animscripted("stun", self.origin, self.angles, level._zombie_board_taunt["zombie"][randomint(6)]);
+	}
 
+	
+	self waittill("stun");
+	
+
+}
 PerkRewards(function){
 	flag_wait("all_players_connected");
 	players = get_players();
@@ -328,7 +398,7 @@ PHD()
 Splash()
 {
 	self EnableInvulnerability();
-	self PlaySound( "nuke_flash" );
+	self PlaySound( "phd_explode" );//"nuke_flash"//play this if you don't have phd sound
 	PlayFX( LoadFX( "explosions/default_explosion"), self.origin );
 	RadiusDamage( self.origin, level.phdradius, level.phddamage, level.phddamage/2, self );
 	self DisableInvulnerability();
@@ -399,7 +469,7 @@ electric_perks_dialog()
 }
 ByByQR(hum){//need to improve this and make it all go away, and remove sounds too or just shut off machine?
 	level waittill("bybyqr");
-	hum delete();
+	
 	machine = spawn("script_model",self.origin );
 	machine setmodel("tag_origin");
 	machine.angles = self.angles;
@@ -409,6 +479,12 @@ ByByQR(hum){//need to improve this and make it all go away, and remove sounds to
 	machine.audio = machine GetMyTrigger("audio_bump_trigger");
 	machine GetMyModel(self.target);
 	machine GetMyModel(self.target+ "_clip"); //if you make clips scripts and uncomment this
+	machine moveto(machine.origin + (0,0,40),5);
+	machine Vibrate( (50, 0, 0), 10, 0.5, 5 );
+	wait(5);
+	playsoundatposition ("box_poof", hum.origin);
+	hum delete();
+	playfx(level.qrvanishfx, machine.origin);
 	machine moveto(self.origin+(0,0,-10000),.01);
 
 	// machine = getent(self.target, "targetname");
@@ -432,6 +508,7 @@ vending_trigger_think()
 	// self UseTriggerRequireLookAt();
 
 	notify_name = perk + "_power_on";
+	self thread machine_watcher_factory();
 	level waittill( notify_name );
 	
 	perk_hum = spawn("script_origin", self.origin);
@@ -444,7 +521,22 @@ vending_trigger_think()
 	for( ;; )
 	{
 		self waittill( "trigger", player );
+		
 		if(!player useButtonPressed() || player HasPerk(perk) || IsSubStr(player getCurrentWeapon(),"bottle") || IsSubStr(player getCurrentWeapon(),level.sellbackweapon)) continue;
+		if(IsDefined( level.mcperklimit ) && (level.mcperklimit<=0 || (isdefined(player.perk_hud.size) && player.perk_hud.size >= level.mcperklimit))){
+			answers = [];
+			answers[answers.size] = "Sorry, the perk limit is " + level.mcperklimit;
+			answers[answers.size] = "No more perks for you, limit " + level.mcperklimit + " met";
+			answers[answers.size] = "You've reached the perk limit of " + level.mcperklimit;
+			answers[answers.size] = "I think you've had enough. Limited to " + level.mcperklimit;
+			asnwers[answers.size] = "Want another perk? Maybe sell one back? Limited to " + level.mcperklimit;
+			answer = array_randomize(answers)[0];//	maps\_utility.gsc:
+
+			player IPrintLnBold( answer );
+			player playLocalSound("no_cha_ching");
+			wait(3);
+			continue;
+		}
 		index = maps\_zombiemode_weapons::get_player_index(player);
 		
 		cost = level.zombie_vars["zombie_perk_cost"];
@@ -501,7 +593,6 @@ vending_trigger_think()
 		///bottle_dispense
 		if(isDefined(level.specialties[perk]["sound"])) sound = level.specialties[perk]["sound"];
 		else sound = "";
-
 		self thread play_vendor_stings(sound);
 
 
@@ -520,6 +611,25 @@ vending_trigger_think()
 		}
 
 		player SetPerk( perk );
+		if(IsDefined( level.usemenuforhud ) && level.usemenuforhud) player notify("perk update");
+		switch(perk){
+			case "specialty_gpsjammer":
+				iPrintLnBold("Shock and hold zombies with grenades.");
+				break;
+			case "specialty_fireproof":
+				iPrintLnBold("Zombies are shocked when they hit you, with " + level.zmp_recharge + " second delay.");
+				break;
+			case "specialty_twoprimaries":
+				iPrintLnBold("For every 2 bullets you get 1 back.");
+				break;
+			case "specialty_shades":
+				iPrintLnBold("Electric Cherry radius increases with less ammo in your clip.");
+				break;
+			case "specialty_explosivedamage":
+				iPrintLnBold("Press crouch or prone in the air to flop!");
+			default:
+				break;
+		}
 		player thread perk_vo(perk);
 		player setblur( 4, 0.1 );
 		wait(0.1);
@@ -542,7 +652,7 @@ vending_trigger_think()
 		bbPrint( "zombie_uses: playername %s playerscore %d round %d cost %d name %s x %f y %f z %f type perk",
 			player.playername, player.score, level.round_number, cost, perk, self.origin );
 
-		player thread perk_think( perk );
+		player thread perk_think( perk);
 		if(perk == "specialty_bulletaccuracy"){
 			player setClientDvar("perk_weapSpreadMultiplier", .42);
 			player setClientDvar( "cg_laserForceOn", 1 );
@@ -646,13 +756,17 @@ vending_set_hintstring( perk ){
 perk_think( perk )
 {
 	if(perk=="specialty_quickrevive" && get_players().size==1){
-		if(!isDefined(self.qrevives)) self.qrevives = 0;
-		else if(self.qrevives>=2){
+		if(isDefined(level.revivelimit) && level.revivelimit <=0){
 			level notify("bybyqr");
 			wait(.1);
-			if(isDefined(self) && isDefined(self.hintString)) self.hintString SetText("");
+			if(isdefined(level.usemenuforhint) && level.usemenuforhint){
+				self SetClientDvar("hintstring","");
+			}else{
+				if(isDefined(self) && isDefined(self.hintString)) self.hintString SetText("");
+			}
+			
 		}
-		self.qrevives++;
+		if(isDefined(level.revivelimit)) level.revivelimit--;
 	}
 	/#
 		if ( GetDVarInt( "zombie_cheat" ) >= 5 )
@@ -674,7 +788,7 @@ perk_think( perk )
 		if(perk=="specialty_armorvest") self.maxhealth = 100;
 		
 		// self.maxhealth = 100;
-		self perk_hud_destroy( perk );
+		self perk_hud_destroy( perk);
 		//self iprintln( "Perk Lost: " + perk );
 		
 		self UnsetPerk( perk );
@@ -702,27 +816,45 @@ perk_hud_create( perk )
 		shader = "black";//default if you don't have shader yet
 		if(isDefined(level.specialties[perk]["shader"])) shader = level.specialties[perk]["shader"];
 
-		hud = create_simple_hud( self );
-		hud.foreground = true; 
-		hud.sort = 1; 
-		hud.hidewheninmenu = false; 
-		hud.alignX = "left"; 
-		hud.alignY = "bottom";
-		hud.horzAlign = "left"; 
-		hud.vertAlign = "bottom";
-		hud.x = self.perk_hud.size * 30; 
-		hud.y = hud.y - 70; 
-		hud.alpha = 1;
-		hud SetShader( shader, 24, 24 );
+		if(IsDefined( level.usemenuforhud ) && level.usemenuforhud){
+			self.perk_hud[ self.perk_hud.size ] = shader;
+			self notify("perk update");
+		}else{
+			hud = create_simple_hud( self );
+			hud.foreground = true; 
+			hud.sort = 1; 
+			hud.hidewheninmenu = false; 
+			hud.alignX = "left"; 
+			hud.alignY = "bottom";
+			hud.horzAlign = "left"; 
+			hud.vertAlign = "bottom";
+			hud.x = (self.perk_hud.size * 30) + 5; 
+			hud.y = hud.y - 70; 
+			hud.alpha = 1;
+			hud SetShader( shader, 24, 24 );
 
-		self.perk_hud[ perk ] = hud;
+			self.perk_hud[ perk ] = hud;
+		}
+
+			
 }
 
 
 perk_hud_destroy( perk )
 {
-	self.perk_hud[ perk ] destroy_hud();
-	self.perk_hud[ perk ] = undefined;
+	
+	if(IsDefined( level.usemenuforhud ) && level.usemenuforhud){
+		self perk_hud_shift(perk);
+	// 	self SetClientDvar("mc_perk_" + number, "");
+	// 	iPrintLnBold(number);
+	// 	iPrintLnBold(self.perk_hud[ number ]);
+	// 	self.perk_hud[ number ] = undefined;
+
+	}else{
+		self.perk_hud[ perk ] destroy_hud();
+		self.perk_hud[ perk ] = undefined;
+	}
+	
 }
 
 perk_give_bottle_begin( perk )
@@ -752,14 +884,16 @@ perk_give_bottle_begin( perk )
 	}else{
 		if(isDefined(level.specialties[perk]["bottle"])) weapon = level.specialties[perk]["bottle"];
 	}
+	// iPrintLnBold(weapon,var);
 	self GiveWeapon( weapon , var);
 	self SwitchToWeapon( weapon );
 
 	return gun;
 }
 GetBottle(perk){
-	for(i=0;i<level.Bottles.size;i++){
-		if(perk==level.Bottles[i]) return i;
+	for(i=0;i<level.OneBottle.size;i++){
+		// iPrintLnBold(perk, i, isDefined(level.OneBottle), isDefined(level.OneBottle[i]));
+		if(perk==level.OneBottle[i]) return i;
 	}
 	return 0;
 }
@@ -822,103 +956,48 @@ perk_vo(type)
 	//wait(randomfloatrange(1,2));
 
 	sound_to_play = "";
-	if(isDefined(level.specialties[type]["vox"])) temp_script_sound = level.specialties[type]["vox"];
 	
+	if(isDefined(level.specialties[type]["vox"])) sound_to_play = level.specialties[type]["vox"];
+	else sound_to_play = "";
+	// iPrintLnBold(sound_to_play);
+	// iPrintLnBold(player_index, self.entity_num);
 	wait(1.0);
 	self maps\_zombiemode_spawner::do_player_playdialog(player_index, sound_to_play, 0.25);
 }
-machine_watcher()
-{
-	//PI ESM - support for two level switches for Factory
-	if (isDefined(level.DLC3.perksNeedPowerOn) && level.DLC3.perksNeedPowerOn)
-	{
-		level thread machine_watcher_factory("juggernog_on","specialty_armorvest");
-		level thread machine_watcher_factory("sleight_on","specialty_fastreload");
-		level thread machine_watcher_factory("doubletap_on","specialty_rof");
-		level thread machine_watcher_factory("revive_on","specialty_quickrevive");
-		level thread machine_watcher_factory("Pack_A_Punch_on");
-	}
-	else
-	{		
-		level waittill("master_switch_activated");
-		//array_thread(getentarray( "zombie_vending", "targetname" ), ::perks_a_cola_jingle);	
-				
-	}		
-	
-}
 
 //PI ESM - added for support for two switches in factory
-machine_watcher_factory(vending_name,specialty)
+machine_watcher_factory(waitforit)
 {
-	level waittill(vending_name);
+	if(isDefined(waitforit)) level waittill(waitforit);
 	temp_script_sound="";
-	if(isdefined(specialty)){
-		if(isDefined(level.specialties[specialty]["sound"])) temp_script_sound = level.specialties[specialty]["sound"];
-	}
-
-
 	temp_machines = getstructarray("perksacola", "targetname");
 	for (x = 0; x < temp_machines.size; x++)
 	{
-		if (temp_machines[x].script_sound == temp_script_sound)
-			temp_machines[x] thread perks_a_cola_jingle();
+		if (distance2D(temp_machines[x].origin,self.origin)<500 && self.script_string == temp_machines[x].script_string){
+			if(isDefined(temp_machines[x].script_sound)) temp_machines[x] thread perks_a_cola_jingle();
+			else temp_machines[x] thread play_random_broken_sounds();	
+		}
 	}
-
 }
 
 play_vendor_stings(sound)
 {	
-	if(!IsDefined (level.speed_jingle)) level.speed_jingle = 0;
-	if(!IsDefined (level.revive_jingle)) level.revive_jingle = 0;
-	if(!IsDefined (level.doubletap_jingle)) level.doubletap_jingle = 0; 
-	if(!IsDefined (level.jugger_jingle)) level.jugger_jingle = 0; 
+	if(!isdefined(self.jingleplaying)) self.jingleplaying = 0;
 	if(!IsDefined (level.packa_jingle)) level.packa_jingle = 0; 
 	if(!IsDefined (level.eggs)) level.eggs = 0; 
 	if (level.eggs == 0)
 	{
-		if(sound == "mx_speed_sting" && level.speed_jingle == 0 ) 
+		if(self.jingleplaying == 0 ) 
 		{
 //			iprintlnbold("stinger speed:" + level.speed_jingle);
-			level.speed_jingle = 1;		
-			temp_org_speed_s = spawn("script_origin", self.origin);		
+			self.jingleplaying = 1;		
+			temp_org_speed_s = spawn("script_origin", self.origin);	
+			// iPrintLnBold(sound, " playing sound");	
 			temp_org_speed_s playsound (sound, "sound_done");
 			temp_org_speed_s waittill("sound_done");
-			level.speed_jingle = 0;
+			self.jingleplaying = 0;
 			temp_org_speed_s delete();
 //			iprintlnbold("stinger speed:" + level.speed_jingle);
-		}
-		else if(sound == "mx_revive_sting" && level.revive_jingle == 0)
-		{
-			level.revive_jingle = 1;
-//			iprintlnbold("stinger revive:" + level.revive_jingle);
-			temp_org_revive_s = spawn("script_origin", self.origin);		
-			temp_org_revive_s playsound (sound, "sound_done");
-			temp_org_revive_s waittill("sound_done");
-			level.revive_jingle = 0;
-			temp_org_revive_s delete();
-//			iprintlnbold("stinger revive:" + level.revive_jingle);
-		}
-		else if(sound == "mx_doubletap_sting" && level.doubletap_jingle == 0) 
-		{
-			level.doubletap_jingle = 1;
-//			iprintlnbold("stinger double:" + level.doubletap_jingle);
-			temp_org_dp_s = spawn("script_origin", self.origin);		
-			temp_org_dp_s playsound (sound, "sound_done");
-			temp_org_dp_s waittill("sound_done");
-			level.doubletap_jingle = 0;
-			temp_org_dp_s delete();
-//			iprintlnbold("stinger double:" + level.doubletap_jingle);
-		}
-		else if(sound == "mx_jugger_sting" && level.jugger_jingle == 0) 
-		{
-			level.jugger_jingle = 1;
-//			iprintlnbold("stinger juggernog" + level.jugger_jingle);
-			temp_org_jugs_s = spawn("script_origin", self.origin);		
-			temp_org_jugs_s playsound (sound, "sound_done");
-			temp_org_jugs_s waittill("sound_done");
-			level.jugger_jingle = 0;
-			temp_org_jugs_s delete();
-//			iprintlnbold("stinger juggernog:"  + level.jugger_jingle);
 		}
 		else if(sound == "mx_packa_sting" && level.packa_jingle == 0) 
 		{
@@ -954,46 +1033,15 @@ perks_a_cola_jingle()
 			level notify ("jingle_playing");
 			//playfx (level._effect["electric_short_oneshot"], self.origin);
 			playsoundatposition ("electrical_surge", self.origin);
-			
-			if(self.script_sound == "mx_speed_jingle" && level.speed_jingle == 0) 
+			if(self.jingleplaying  == 0) 
 			{
-				level.speed_jingle = 1;
+				self.jingleplaying = 1;
 				temp_org_speed = spawn("script_origin", self.origin);
 				wait(0.05);
 				temp_org_speed playsound (self.script_sound, "sound_done");
 				temp_org_speed waittill("sound_done");
-				level.speed_jingle = 0;
+				self.jingleplaying = 0;
 				temp_org_speed delete();
-			}
-			if(self.script_sound == "mx_revive_jingle" && level.revive_jingle == 0) 
-			{
-				level.revive_jingle = 1;
-				temp_org_revive = spawn("script_origin", self.origin);
-				wait(0.05);
-				temp_org_revive playsound (self.script_sound, "sound_done");
-				temp_org_revive waittill("sound_done");
-				level.revive_jingle = 0;
-				temp_org_revive delete();
-			}
-			if(self.script_sound == "mx_doubletap_jingle" && level.doubletap_jingle == 0) 
-			{
-				level.doubletap_jingle = 1;
-				temp_org_doubletap = spawn("script_origin", self.origin);
-				wait(0.05);
-				temp_org_doubletap playsound (self.script_sound, "sound_done");
-				temp_org_doubletap waittill("sound_done");
-				level.doubletap_jingle = 0;
-				temp_org_doubletap delete();
-			}
-			if(self.script_sound == "mx_jugger_jingle" && level.jugger_jingle == 0) 
-			{
-				level.jugger_jingle = 1;
-				temp_org_jugger = spawn("script_origin", self.origin);
-				wait(0.05);
-				temp_org_jugger playsound (self.script_sound, "sound_done");
-				temp_org_jugger waittill("sound_done");
-				level.jugger_jingle = 0;
-				temp_org_jugger delete();
 			}
 			if(self.script_sound == "mx_packa_jingle" && level.packa_jingle == 0) 
 			{
@@ -1091,6 +1139,21 @@ play_packa_get_dialog(player_index)
 		self.vox_perk_packa_get_available = self.vox_perk_packa_get;
 	}
 }
+
+setPerkDvars(){
+	if(!IsDefined( level.mcperklimit )) level.mcperklimit = level.specialties.size;
+	self endon( "disconnect" );
+	while(1){
+
+		for(i = 0; i < level.mcperklimit; i ++){//
+			perk = "";
+			if(IsDefined( self.perk_hud[i] )) perk = self.perk_hud[i];
+			self SetClientDvar("mc_perk_" + i, perk);
+		}
+		self waittill_any( "fake_death", "death", "player_downed", "perk update");//, "weapon_change_complete" 
+	}	
+}
+
 third_person_weapon_upgrade( current_weapon, origin, angles, packa_rollers, perk_machine )
 {
 	forward = anglesToForward( angles );
@@ -1389,6 +1452,7 @@ turn_PackAPunch_on()
 	vending_upgrade_trigger = GetEntArray("zombie_vending_upgrade", "targetname");
 	for(i=0; i<vending_upgrade_trigger.size; i++ )
 	{
+		// vending_upgrade_trigger[i] thread machine_watcher_factory("Pack_A_Punch_on");
 		perk = getent(vending_upgrade_trigger[i].target, "targetname");
 		if(isDefined(perk))
 		{
@@ -1648,32 +1712,66 @@ WaitForPerk(){
 	while(isDefined(self)){
 		self waittill("trigger",player);
 		if(isDefined(self.lookat) && self.lookat){
-			if(!player canSeeThisEnt(self)){
-				if(isDefined(player.hintString)) player.hintString destroy();
-			 	continue;
+			if(isDefined(level.usemenuforhint) && level.usemenuforhint){
+				if(!player canSeeThisEnt(self)){
+					player SetClientDvar("hinstring", "");
+				 	continue;
+				}
+			}else{
+				if(!player canSeeThisEnt(self)){
+					if(isDefined(player.hintString)) player.hintString destroy();
+				 	continue;
+				}
 			}
+				
+		}
+		if(isdefined(level.usemenuforhint) && level.usemenuforhint){
+			if(player HasPerk(self.script_noteworthy) && level.perksellback) player SetClientDvar("hintstring","^1 to sell back perk for " + self.zombie_cost/2);
+			else player SetClientDvar("hintstring",MenuFix(self.myHint));
+			self thread KillMePlease(player);
+			continue;
 		}
 		if(isDefined(player.hintString)){
-			if(player HasPerk(self.script_noteworthy) && level.perksellback) player.hintString SetText(UserHint("^1Press &&1 to sell back perk for " + self.zombie_cost/2));
+			if(player HasPerk(self.script_noteworthy) && level.perksellback) player.hintString SetText(UserHint("^1Press & hold &&1 to sell back perk for " + self.zombie_cost/2));
 			else player.hintString SetText(self.myHint);
 			continue;
+		}
+
+		if(isdefined(level.usemenuforhint) && level.usemenuforhint){
+			player SetClientDvar("hintstring",MenuFix(self.myHint));
+			if(player HasPerk(self.script_noteworthy) && level.perksellback) player SetClientDvar("hintstring","^1 to sell back perk for " + self.zombie_cost/2);
+			self thread KillMePlease(player);
 		}
 		if(!isDefined(player.hintString)){
 			player SetPlayerHint(self.myHint);
 			self thread KillMePlease(player);
 		}else{
 			player.hintString SetText(self.myHint);
-			if(player HasPerk(self.script_noteworthy) && level.perksellback) player.hintString SetText(UserHint("^1Press &&1 to sell back perk for " + self.zombie_cost/2));
+			if(player HasPerk(self.script_noteworthy) && level.perksellback) player.hintString SetText(UserHint("^1Press & hold &&1 to sell back perk for " + self.zombie_cost/2));
 		}
 	}
 }
+
+MenuFix(hint){
+	if(!IsSubStr(hint,"Press & hold [{+activate}]")) return hint;
+	toks = StrTok(hint, " ");
+	begin = 0;
+	newhint = "";
+	for(i=0;i<toks.size;i++){
+		if(begin) newhint = newhint + " " + toks[i];
+		if(!begin && (toks[i] == "&&1" || toks[i] == "[{+activate}]")) begin = 1;
+		
+	}
+	return newhint;
+}
 KillMePlease(player){
 	player endon("disconnect");
-	while(player IsTouching(self)){
+	while(player canSeeThisEnt(self) ){
 		wait(.01);
 		if(isDefined(self.script_noteworthy) && player HasPerk(self.script_noteworthy) && !level.perksellback) break;
 	}
-	player.hintString destroy();
+	if(isDefined(player.hintString)) player.hintString destroy();
+	if(isDefined(level.usemenuforhint) && level.usemenuforhint) player SetClientDvar("hintstring", "");
 }
 UserHint(hint_string){
 	//Changes the &&1 to the players use button
@@ -1749,12 +1847,14 @@ SellPerk(player){
 		player.selling = undefined;
 		return;
 	} 
+
 	player maps\_zombiemode_score::add_to_player_score( int(self.zombie_cost/2) );
 	// while(player useButtonPressed()) wait(.1);
 	player perk_hud_shift(self.script_noteworthy);
 	player notify(self.script_noteworthy+"_sold");
 	while(player useButtonPressed()) wait(.1);
 	player.selling = undefined;
+	if(IsDefined( level.usemenuforhud ) && level.usemenuforhud) player notify("perk update");
 	
 }
 ProgressBars(timer,player){
@@ -1771,7 +1871,7 @@ ProgressBars(timer,player){
 	player.PBar = player CreatePrimaryProgressBar();
 	player.PBar.color = ( .5, 1, 1 );
 	player.PBar UpdateBar( 0.01, 1/constTime );
-	while(player UseButtonPressed() && player IsTouching(self) && player isOnGround() && !player maps\_laststand::player_is_in_laststand() && timer>0){
+	while(player canSeeThisEnt(self) && player hasperk(self.script_noteworthy) && player UseButtonPressed() && player IsTouching(self) && player isOnGround() && !player maps\_laststand::player_is_in_laststand() && timer>0){
 		wait(.1);
 		timer = timer-.1;
 	}
@@ -1787,11 +1887,34 @@ ProgressBars(timer,player){
 
 perk_hud_shift(perk){
 	self endon("disconnect");
-	x = self.perk_hud[ perk ].x;
-	// self perk_hud_destroy( perk );
-	perks = GetArrayKeys(self.perk_hud);
-	for(i=0;i<perks.size;i++){
-		if(self.perk_hud[ perks[i]].x > x) self.perk_hud[ perks[i]].x = self.perk_hud[ perks[i]].x - 30;
+	if(isDefined(level.usemenuforhud) && level.usemenuforhud){
+		number = undefined;
+		for(i=0;i<self.perk_hud.size;i++){
+			if(self.perk_hud[i] == level.specialties[perk]["shader"]){
+				number = i;
+				break;
+			}
+		}
+		if(isDefined(number)){
+			for(i=0;i<self.perk_hud.size;i++){
+				if(i>=number){
+					if(isDefined(self.perk_hud[i+1])){
+						self.perk_hud[i] = self.perk_hud[i+1];
+					}else{
+						self.perk_hud[i] = undefined;
+						break;
+					}
+				}
+			}
+		}
+		self notify("perk update");
+	}else{
+		x = self.perk_hud[ perk ].x;
+		// self perk_hud_destroy( perk );
+		perks = GetArrayKeys(self.perk_hud);
+		for(i=0;i<perks.size;i++){
+			if(self.perk_hud[ perks[i]].x > x) self.perk_hud[ perks[i]].x = self.perk_hud[ perks[i]].x - 30;
+		}
 	}
 }
 
