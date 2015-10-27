@@ -1619,13 +1619,13 @@ treasure_chest_give_weapon( weapon_string )
 						level.player_drops_tesla_gun = true;
 					}
 				}
-				//MakeCents
+				//
 				if(!self HasPerk("specialty_extraammo") || primaryWeapons.size >2){ //modified for mulekick
 					self TakeWeapon( current_weapon ); 
 				}
 				// PI_CHANGE_END
 				
-				self TakeWeapon( current_weapon ); 
+				//self TakeWeapon( current_weapon ); 
 		} 
 	} 
 	} 
@@ -1634,7 +1634,7 @@ treasure_chest_give_weapon( weapon_string )
 	{
 		for( i = 0; i < primaryWeapons.size; i++ )
 		{
-			//MakeCents
+			//
 			if( primaryWeapons.size == 1)//primaryWeapons[i] == "zombie_colt" )//modified so any weapon, as long as it was only one works
 			{
 				continue; 
