@@ -504,9 +504,16 @@ debris_move( struct )
 	self script_delay();
 	//chrisp - prevent playerse from getting stuck on the stuff
 	self notsolid();
+	if ( IsDefined( self.script_sound ) )
+	{
+		// self play_sound_on_ent( self.script_sound );
+		playsoundatposition (self.script_sound, self.origin);
+	}else{
+		self play_sound_on_ent( "debris_move" );
+		playsoundatposition ("lightning_l", self.origin);
+	}
 	
-	self play_sound_on_ent( "debris_move" );
-	playsoundatposition ("lightning_l", self.origin);
+	
 	if( IsDefined( self.script_firefx ) )
 	{
 		PlayFX( level._effect[self.script_firefx], self.origin );
@@ -1103,5 +1110,3 @@ flag_blocker()
 
 	AssertMsg( "flag blocker at " + self.origin + ", the type \"" + type + "\" is not recognized" );
 }
-
-
