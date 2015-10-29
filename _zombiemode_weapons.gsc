@@ -254,6 +254,7 @@ init_weapons()//MakeCents, add a var for box (true or false), must have ammo cos
 	// Full Auto                                                                                	
 	add_zombie_weapon( "zombie_mp40", 							&"ZOMBIE_WEAPON_MP40_1000", 				1000,	"vox_mp40",		2 ); 
 	add_zombie_weapon( "zombie_mp40_upgraded", 					&"ZOMBIE_WEAPON_MP40_1000", 				1000,	"vox_mp40",		2 ); 
+	add_zombie_weapon( "ap9", 							"Press &&1 to buy AP-9", 				1200,	"vox_ppsh",		5 );
 	add_zombie_weapon( "zombie_ppsh", 							&"ZOMBIE_WEAPON_PPSH_2000", 				2000,	"vox_ppsh",		5 );
 	add_zombie_weapon( "zombie_ppsh_upgraded", 					&"ZOMBIE_WEAPON_PPSH_2000", 				2000,	"vox_ppsh",		5 );
 	add_zombie_weapon( "zombie_stg44", 							&"ZOMBIE_WEAPON_STG44_1200", 				1200,	"vox_mg",		9 );
@@ -387,7 +388,6 @@ init_weapon_upgrade()
 	for( i = 0; i < weapon_spawns.size; i++ )
 	{
 		hint_string = get_weapon_hint( weapon_spawns[i].zombie_weapon_upgrade ); 
-
 		weapon_spawns[i] SetHintString( hint_string ); 
 		weapon_spawns[i] setCursorHint( "HINT_NOICON" ); 
 		weapon_spawns[i] UseTriggerRequireLookAt();
@@ -736,7 +736,7 @@ treasure_chest_think()
 	{
 		cost = self.zombie_cost;
 	}
-
+	
 	self set_hint_string( self, "default_treasure_chest_" + cost );
 	self setCursorHint( "HINT_NOICON" );
 
@@ -1619,13 +1619,13 @@ treasure_chest_give_weapon( weapon_string )
 						level.player_drops_tesla_gun = true;
 					}
 				}
-				//
-				if(!self HasPerk("specialty_extraammo") || primaryWeapons.size >2){ //modified for mulekick
-					self TakeWeapon( current_weapon ); 
-				}
+				//MakeCents
+				if(!self HasPerk("specialty_extraammo") || primaryWeapons.size >2){ //added for mulekick
+					self TakeWeapon( current_weapon ); //added for mulekick
+				}//added for mulekick
 				// PI_CHANGE_END
 				
-				//self TakeWeapon( current_weapon ); 
+				// self TakeWeapon( current_weapon ); //commented out for mulekick
 		} 
 	} 
 	} 
@@ -1634,7 +1634,7 @@ treasure_chest_give_weapon( weapon_string )
 	{
 		for( i = 0; i < primaryWeapons.size; i++ )
 		{
-			//
+			//MakeCents
 			if( primaryWeapons.size == 1)//primaryWeapons[i] == "zombie_colt" )//modified so any weapon, as long as it was only one works
 			{
 				continue; 
@@ -2191,10 +2191,10 @@ weapon_give( weapon, is_upgrade )
 			if( !( weapon == "fraggrenade" || weapon == "stielhandgranate" || weapon == "molotov" || weapon == "zombie_cymbal_monkey" ) )
 			{
 				//MakeCents
-				if(!self HasPerk("specialty_extraammo") || primaryWeapons.size >2){ //modified for mulekick
-					self TakeWeapon( current_weapon ); 
-				}
-				// self TakeWeapon( current_weapon ); 
+				if(!self HasPerk("specialty_extraammo") || primaryWeapons.size >2){ //added for mulekick
+					self TakeWeapon( current_weapon );//added for mulekick 
+				}//added for mulekick
+				// self TakeWeapon( current_weapon ); //commented out for mulekick
 			}
 		} 
 	}
@@ -2615,6 +2615,3 @@ add_weapon_to_sound_array(vo,num)
 	}
 
 }
-
-
-
