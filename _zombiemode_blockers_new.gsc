@@ -367,7 +367,7 @@ debris_init()
 	}
 	if(isDefined(self.script_noteworthy) && self.script_noteworthy == "electric_door")
 	{
-		self set_door_unusable()
+		self set_door_unusable();
 		flag_wait( "electricity_on" );
 	}
 	self set_hint_string( self, "default_buy_debris_" + cost );
