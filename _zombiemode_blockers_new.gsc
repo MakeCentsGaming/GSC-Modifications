@@ -132,7 +132,7 @@ door_think()
 	// or I cuold just give it no collision
 	while( 1 )
 	{
-		if(isDefined(self.script_noteworthy) && self.script_noteworthy == "electric_door" && !isDefined())
+		if(isDefined(self.script_noteworthy) && self.script_noteworthy == "electric_door")
 		{
 			flag_wait( "electricity_on" );
 		}
