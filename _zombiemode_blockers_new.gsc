@@ -192,6 +192,7 @@ door_think()
 			if ( ( IsDefined( self.doors[i].script_noteworthy )	&& self.doors[i].script_noteworthy == "clip" ) ||
 				 ( IsDefined( self.doors[i].script_string )		&& self.doors[i].script_string == "clip" ) )
 			{
+				self.doors[i] delete();
 				continue;
 			}
 
@@ -267,7 +268,8 @@ door_think()
 		all_trigs = getentarray( self.target, "target" ); 
 		for( i = 0; i < all_trigs.size; i++ )
 		{
-			all_trigs[i] trigger_off(); 
+			//all_trigs[i] trigger_off(); 
+			all_trigs[i] delete();
 		}
 		break;
 	}
